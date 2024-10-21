@@ -47,24 +47,49 @@ jobs:
       run: |
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -qq update
-        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
+        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android
+
+        # 保持 grub-efi-amd64-signed 包不被更新
         sudo -E apt-mark hold grub-efi-amd64-signed
-        sudo -E apt update
+
+        # 移除不需要的包
         sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap*
+
+        # 更新系统
         sudo -E apt -y full-upgrade
-        sudo -E apt -y install ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip libpython3-dev qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
-        sudo -E systemctl daemon-reload
-        sudo -E apt -y autoremove --purge
-        sudo -E apt clean
-        clang++ --version
+
+        # 安装必要的工具以添加 LLVM 仓库
+        sudo -E apt -y install wget gnupg lsb-release software-properties-common
+
+        # 添加 LLVM 官方 APT 仓库并安装 Clang 14
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 14
+
+        # 安装 Clang 14
+        sudo apt-get -qq update
         sudo apt-get -qq install clang-14
+    
+        # 设置默认的 clang 和 clang++ 为 Clang 14
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100
+
+        # 验证 Clang 版本
+        clang --version
         clang++ --version
-        sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-2004)
-        sudo -E apt-get -qq autoremove --purge
-        sudo -E apt-get -qq clean
+
+        # 删除 llvm.sh 脚本
+        sudo rm llvm.sh
+
+        # 清理不必要的包和缓存
+        sudo -E apt -y autoremove --purge
+        sudo -E apt -qq clean
+
+        # 设置时区和工作目录权限
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
+
 
     - name: Clone source code
       working-directory: /workdir
