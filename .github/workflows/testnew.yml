@@ -105,19 +105,7 @@ jobs:
       run: |
         set -e  # 遇到错误时退出
 
-        # 清理不必要的文件和目录
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -qq update
-        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android
-
-        # 保持 grub-efi-amd64-signed 包不被更新
-        sudo -E apt-mark hold grub-efi-amd64-signed
-
-        # 移除不需要的包，包括所有现有的 Clang 版本
-        sudo -E apt -y purge llvm* clang* azure-cli* docker* ghc* zulu* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* snap*
-
-        # 更新系统
-        sudo -E apt -y full-upgrade
 
         # 安装必要的工具以添加 LLVM 仓库
         sudo -E apt -y install wget gnupg lsb-release software-properties-common
